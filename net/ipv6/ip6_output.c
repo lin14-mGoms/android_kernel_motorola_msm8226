@@ -1339,11 +1339,8 @@ emsgsize:
 	}
 
 	/* For UDP, check if TX timestamp is enabled */
-	if (sk->sk_type == SOCK_DGRAM) {
-		err = sock_tx_timestamp(sk, &tx_flags);
-		if (err)
-			goto error;
-	}
+	if (sk->sk_type == SOCK_DGRAM)
+		sock_tx_timestamp(sk, &tx_flags);
 
 	/*
 	 * Let's try using as much space as possible.
