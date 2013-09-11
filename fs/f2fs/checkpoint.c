@@ -329,7 +329,7 @@ static void __add_ino_entry(struct f2fs_sb_info *sbi, nid_t ino, int type)
 	struct inode_management *im = &sbi->im[type];
 	struct ino_entry *e;
 retry:
-	if (radix_tree_preload(GFP_NOFS)) {
+	if (radix_tree_maybe_preload(GFP_NOFS)) {
 		cond_resched();
 		goto retry;
 	}
