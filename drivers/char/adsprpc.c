@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -43,6 +43,8 @@
 #define RPC_HASH_BITS	5
 #define RPC_HASH_SZ	(1 << RPC_HASH_BITS)
 #define BALIGN		32
+
+#define FASTRPC_STATIC_HANDLE_KERNEL (1)
 
 #define LOCK_MMAP(kernel)\
 		do {\
@@ -956,6 +958,15 @@ static int fastrpc_internal_invoke(struct fastrpc_apps *me, uint32_t mode,
 	int err = 0;
 
 	if (!kernel) {
+		VERIFY(err, invoke->handle != FASTRPC_STATIC_HANDLE_KERNEL);
+		if (err) {
+			pr_err("adsprpc: ERROR: %s: user application %s trying to send a kernel RPC message",
+				__func__, current->comm);
+			goto bail;
+		}
+	}
+
+	if (!kernel) {
 		VERIFY(err, 0 == context_restore_interrupted(me, invokefd,
 								&ctx));
 		if (err)
@@ -1032,7 +1043,7 @@ static int fastrpc_create_current_dsp_process(void)
 	tgid = current->tgid;
 	ra[0].buf.pv = &tgid;
 	ra[0].buf.len = sizeof(tgid);
-	ioctl.inv.handle = 1;
+	ioctl.inv.handle = FASTRPC_STATIC_HANDLE_KERNEL;
 	ioctl.inv.sc = REMOTE_SCALARS_MAKE(0, 1, 0);
 	ioctl.inv.pra = ra;
 	ioctl.fds = 0;
@@ -1052,7 +1063,7 @@ static int fastrpc_release_current_dsp_process(void)
 	tgid = current->tgid;
 	ra[0].buf.pv = &tgid;
 	ra[0].buf.len = sizeof(tgid);
-	ioctl.inv.handle = 1;
+	ioctl.inv.handle = FASTRPC_STATIC_HANDLE_KERNEL;
 	ioctl.inv.sc = REMOTE_SCALARS_MAKE(1, 1, 0);
 	ioctl.inv.pra = ra;
 	ioctl.fds = 0;
@@ -1092,7 +1103,7 @@ static int fastrpc_mmap_on_dsp(struct fastrpc_apps *me,
 	ra[2].buf.pv = &routargs;
 	ra[2].buf.len = sizeof(routargs);
 
-	ioctl.inv.handle = 1;
+	ioctl.inv.handle = FASTRPC_STATIC_HANDLE_KERNEL;
 	ioctl.inv.sc = REMOTE_SCALARS_MAKE(2, 2, 1);
 	ioctl.inv.pra = ra;
 	ioctl.fds = 0;
@@ -1123,7 +1134,7 @@ static int fastrpc_munmap_on_dsp(struct fastrpc_apps *me,
 	ra[0].buf.pv = &inargs;
 	ra[0].buf.len = sizeof(inargs);
 
-	ioctl.inv.handle = 1;
+	ioctl.inv.handle = FASTRPC_STATIC_HANDLE_KERNEL;
 	ioctl.inv.sc = REMOTE_SCALARS_MAKE(3, 1, 0);
 	ioctl.inv.pra = ra;
 	ioctl.fds = 0;
